@@ -2,8 +2,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <iostream>
-#include <helper_functions.h>
-#include <helper_cuda.h>
+
 
 
 #define BLOCK_SIZE 32
