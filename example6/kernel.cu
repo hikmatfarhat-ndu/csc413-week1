@@ -15,11 +15,11 @@
 const  int TILE_WIDTH = 32;
 // compute the number of lines of code each implementation requires
 const unsigned int simple_implementation_begin = __LINE__;
-
 // a simple version of matrix_multiply which issues redundant loads from off-chip global memory
 __global__ void matrix_multiply_simple(float* a, float* b, float* ab, 
    int w)
 {
+
     // calculate the row & column index of the element
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -122,7 +122,7 @@ int main(void)
     matrix_multiply_simple << <num_blocks, block_size >> > (d_a, d_b, d_c, n);
 
     // time many kernel launches and take the average time
-    const size_t num_launches = 100;
+    const size_t num_launches = 500;
     float average_simple_time = 0;
     std::cout << "Timing simple implementation...";
     for (int i = 0; i < num_launches; ++i)

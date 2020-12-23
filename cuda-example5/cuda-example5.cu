@@ -12,25 +12,25 @@ __global__ void mult(float* da, float* db, float* dc, int width) {
 	int bx = blockIdx.x;
 	int ty = threadIdx.y;
 	int tx = threadIdx.x;
-	//int i = BLOCK_SIZE * brow + row;
-	//int j = BLOCK_SIZE * bcol + col;
+	int row = by * BLOCK_SIZE + ty;
+	int col = bx * BLOCK_SIZE + tx;
+	__shared__ float sa[BLOCK_SIZE][BLOCK_SIZE];
+	__shared__ float sb[BLOCK_SIZE][BLOCK_SIZE];
 	float res = 0.0;
-	for (int b = 0; b < width / BLOCK_SIZE; ++b) {
-		__shared__ float sa[BLOCK_SIZE][BLOCK_SIZE];
-		__shared__ float sb[BLOCK_SIZE][BLOCK_SIZE];
+	int ntiles = width / BLOCK_SIZE;
+	for (int b = 0; b < ntiles; ++b) {
+		
 		/* copy from memory to shared memory */
-		sa[ty][tx] = da[(by * BLOCK_SIZE + ty) * width + b * BLOCK_SIZE + tx];
-		sb[ty][tx] = db[(b * BLOCK_SIZE + ty) * width + bx * BLOCK_SIZE + tx];
+		sa[ty][tx] = da[row * width + b * BLOCK_SIZE + tx];
+		sb[ty][tx] = db[(b * BLOCK_SIZE + ty) * width + col];
 		
 		__syncthreads();
 		for (int k = 0; k < BLOCK_SIZE; ++k) {
 			res += sa[ty][k] * sb[k][tx];
-
 		}
 		__syncthreads();
 	}
-	//dc[(by * BLOCK_SIZE + ty)* width + bx * BLOCK_SIZE + tx] = res;
-	dc[(by * BLOCK_SIZE * width + bx * BLOCK_SIZE) + width * ty + tx] = res;
+	dc[row* width + col] = res;
 }
 
 
@@ -63,15 +63,15 @@ int main() {
 	float time = 0;
 	float total = 0;
 
-	for (int i = 0; i < 100; ++i) {
-		cudaEventRecord(kernel_start);
+	for (int i = 0; i < 500; ++i) {
+		cudaEventRecord(kernel_start,0);
 		mult << <gridSize, blockSize >> > (da, db, dc, matrix_width);
-		cudaEventRecord(kernel_end);
+		cudaEventRecord(kernel_end,0);
 		cudaEventSynchronize(kernel_end);
 		cudaEventElapsedTime(&time, kernel_start, kernel_end);
 		total += time;
 	}
-	std::cout << "average time " << total/100 << '\n';
+	std::cout << "average time " << total/500 << '\n';
 	cudaMemcpy(c, dc, size * sizeof(float), cudaMemcpyDeviceToHost);
 	for (int i = 0; i < 64; i++)
 		std::cout << c[i] << ' ';
